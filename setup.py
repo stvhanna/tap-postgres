@@ -3,13 +3,13 @@
 from setuptools import setup
 
 setup(name='tap-postgres',
-      version='0.0.3',
+      version='0.0.38',
       description='Singer.io tap for extracting data from Oracle',
       author='Stitch',
       url='https://singer.io',
       classifiers=['Programming Language :: Python :: 3 :: Only'],
       install_requires=[
-          'singer-python==5.0.13',
+          'singer-python==5.2.0',
           'requests==2.12.4',
 	  'psycopg2==2.7.4',
 	  'strict-rfc3339==0.7',
