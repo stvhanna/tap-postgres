@@ -1,6 +1,5 @@
 import datetime
 import decimal
-import json
 import math
 import psycopg2
 import psycopg2.extras
@@ -90,12 +89,8 @@ def selected_value_to_singer_value_impl(elem, sql_datatype):
     elif isinstance(elem, dict):
         if sql_datatype == 'hstore':
             cleaned_elem = elem
-        elif sql_datatype in {'json', 'jsonb'}:
-            cleaned_elem = json.dumps(elem)
         else:
             raise Exception("do not know how to marshall a dict if its not an hstore or json: {}".format(sql_datatype))
-    elif isinstance(elem, list) and sql_datatype in {'json', 'jsonb'}:
-        cleaned_elem = json.dumps(elem)
     else:
         raise Exception("do not know how to marshall value of class( {} ) and sql_datatype ( {} )".format(elem.__class__, sql_datatype))
 
@@ -134,7 +129,10 @@ def hstore_available(conn_info):
     with open_connection(conn_info) as conn:
         with conn.cursor(cursor_factory=psycopg2.extras.DictCursor, name='stitch_cursor') as cur:
             cur.execute(""" SELECT installed_version FROM pg_available_extensions WHERE name = 'hstore' """)
-            return cur.fetchone()[0] is not None
+            res = cur.fetchone()
+            if res and res[0]:
+                return True
+            return False
 
 
 def compute_tap_stream_id(database_name, schema_name, table_name):

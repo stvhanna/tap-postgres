@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# pylint: disable=missing-docstring,not-an-iterable,too-many-locals,too-many-arguments,invalid-name,too-many-return-statements,too-many-branches,len-as-condition,too-many-statements,broad-except
+# pylint: disable=missing-docstring,not-an-iterable,too-many-locals,too-many-arguments,invalid-name,too-many-return-statements,too-many-branches,len-as-condition,too-many-statements,broad-except,unnecessary-lambda
 
 import datetime
 import pdb
@@ -435,28 +435,10 @@ def do_discovery(conn_config):
 
 
 def should_sync_column(md_map, field_name):
-
-    inclusion = md_map.get(('properties', field_name), {}).get('inclusion')
-    selected = md_map.get(('properties', field_name), {}).get('selected')
-    selected_by_default = md_map.get(('properties', field_name), {}).get('selected-by-default')
-
-    #always sync replication_keys
-    if md_map.get((), {}).get('replication-key') == field_name:
-        return True
-
-    if inclusion == 'unsupported':
-        return False
-
-    if selected:
-        return True
-
-    if inclusion == 'automatic':
-        return True
-
-    if selected_by_default and (selected is not False):
-        return True
-
-    return False
+    field_metadata = md_map.get(('properties', field_name), {})
+    return singer.should_sync_field(field_metadata.get('inclusion'),
+                                    field_metadata.get('selected'),
+                                    True)
 
 def is_selected_via_metadata(stream):
     table_md = metadata.to_map(stream['metadata']).get((), {})
@@ -642,6 +624,10 @@ def register_type_adapters(conn_config):
             psycopg2.extensions.register_type(
                 psycopg2.extensions.new_array_type(
                     (money_array_oid,), 'MONEY[]', psycopg2.STRING))
+
+            #json and jsbon
+            psycopg2.extras.register_default_json(loads=lambda x: str(x))
+            psycopg2.extras.register_default_jsonb(loads=lambda x: str(x))
 
             #enum[]'s
             cur.execute("SELECT distinct(t.typarray) FROM pg_type t JOIN pg_enum e ON t.oid = e.enumtypid")
